@@ -104,4 +104,5 @@ ENV=test pytest -v
 - The test database (`library_test_db`) is used to isolate test runs from the production database.
 - The CLI allows for easy management of the library, including adding books, borrowers, and managing loans.
 
-If you encounter any issues or have questions, feel free to raise an issue or contribute to the project.# library-system
+
+If you encounter any issues or have questions, feel free to raise an issue or contribute to the project.
