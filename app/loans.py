@@ -1,9 +1,9 @@
-from db_connection import connect_to_db
+from .db_connection import connect_to_db
 from tabulate import tabulate
-
+from datetime import datetime
 
 def view_loans():
-    # View all loans with borrower and book details
+    # Fetch and display all loans with borrower and book details
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -14,7 +14,7 @@ def view_loans():
         JOIN books ON loans.book_id = books.book_id
         JOIN borrowers ON loans.borrower_id = borrowers.borrower_id
         ORDER BY loans.loan_date DESC
-    """
+        """
     )
 
     loans = cur.fetchall()
@@ -22,6 +22,7 @@ def view_loans():
     if loans:
         headers = ["Loan ID", "Book Title", "Borrower", "Loan Date", "Return Date"]
         print(tabulate(loans, headers, tablefmt="fancy_grid"))
+        print(f"\nTotal number of loans: {len(loans)}\n")
     else:
         print("\nNo loans found.\n")
 
@@ -41,7 +42,7 @@ def search_loan(keyword):
         JOIN borrowers ON loans.borrower_id = borrowers.borrower_id
         WHERE books.title ILIKE %s
            OR borrowers.name ILIKE %s
-    """
+        """
 
     keyword_formatted = f"%{keyword}%"
     params = [keyword_formatted, keyword_formatted]
@@ -52,22 +53,16 @@ def search_loan(keyword):
     if loans:
         headers = ["Loan ID", "Book Title", "Borrower", "Loan Date", "Return Date"]
         print(tabulate(loans, headers, tablefmt="fancy_grid"))
+        print(f"\nTotal number of loans found: {len(loans)}\n")
     else:
-        print("\nNo loans found matching the search criteria.\n")
+        print(f"\nNo loans found matching the keyword: '{keyword}'\n")
 
     cur.close()
     conn.close()
 
 
 def borrow_book(book_id, borrower_id):
-    try:
-        book_id = int(book_id)
-        borrower_id = int(borrower_id)
-    except ValueError:
-        print("\nError: Both Book ID and Borrower ID must be integers.\n")
-        return
-
-    # Borrow a book, create a loan record, and display the loan details, including error handling for invalid input.
+    # Borrow a book and create a loan record, ensuring that the book is available
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -97,7 +92,7 @@ def borrow_book(book_id, borrower_id):
                 INSERT INTO loans (book_id, borrower_id, loan_date)
                 VALUES (%s, %s, CURRENT_DATE)
                 RETURNING loan_id, loan_date
-            """,
+                """,
                 (book_id, borrower_id),
             )
 
@@ -119,13 +114,7 @@ def borrow_book(book_id, borrower_id):
 
 
 def return_book(loan_id):
-    try:
-        loan_id = int(loan_id)
-    except ValueError:
-        print("\nError: Loan ID must be an integer.\n")
-        return
-
-    # Return a book by loan ID, update the loan record, and display the loan details
+    # Return a book and update the loan record
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -136,7 +125,7 @@ def return_book(loan_id):
         JOIN books ON loans.book_id = books.book_id
         JOIN borrowers ON loans.borrower_id = borrowers.borrower_id
         WHERE loans.loan_id = %s AND loans.return_date IS NULL
-    """,
+        """,
         (loan_id,),
     )
     loan = cur.fetchone()
@@ -164,13 +153,7 @@ def return_book(loan_id):
 
 
 def modify_loan(loan_id):
-    try:
-        loan_id = int(loan_id)
-    except ValueError:
-        print("\nError: Loan ID must be an integer.\n")
-        return
-
-    # Modify the details of a specific loan, ensuring the return date is not earlier than the loan date
+    # Modify loan details, ensuring return date is not earlier than loan date and only if the loan has been returned
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -181,47 +164,55 @@ def modify_loan(loan_id):
         JOIN books ON loans.book_id = books.book_id
         JOIN borrowers ON loans.borrower_id = borrowers.borrower_id
         WHERE loans.loan_id = %s
-    """,
+        """,
         (loan_id,),
     )
     loan = cur.fetchone()
 
     if loan:
+        loan_id, book_title, borrower_name, loan_date, return_date = loan
         headers = ["Loan ID", "Book Title", "Borrower", "Loan Date", "Return Date"]
         print(tabulate([loan], headers, tablefmt="fancy_grid"))
 
-        while True:
-            confirm = input("Do you want to modify this loan? (yes/no): ").strip().lower()
-            if confirm in ["yes", "no"]:
-                break
-            else:
-                print("\nPlease enter 'yes' or 'no'.")
+        if return_date is None:
+            print("\nError: This loan has not been returned yet. Modification is not allowed.\n")
+        else:
+            while True:
+                confirm = input("Do you want to modify this loan's return date? (yes/no): ").strip().lower()
+                if confirm in ["yes", "no"]:
+                    break
+                else:
+                    print("\nPlease enter 'yes' or 'no'.")
 
-        if confirm == "yes":
-            new_return_date = input(f"\nEnter new return date (current: {loan[4]}): ").strip()
+            if confirm == "yes":
+                while True:
+                    new_return_date = input(f"\nEnter new return date in the format YYYY-MM-DD (current: {return_date}): ").strip()
 
-            if new_return_date:
-                loan_date = loan[3]
+                    # Validate if the input is a date in the correct format
+                    try:
+                        datetime.strptime(new_return_date, "%Y-%m-%d")
+                        break
+                    except ValueError:
+                        print("\nError: Please enter a valid date in the format YYYY-MM-DD.")
+
+                # Ensure the new return date is not earlier than the loan date
                 if new_return_date >= str(loan_date):
                     cur.execute(
                         """
                         UPDATE loans
                         SET return_date = %s
                         WHERE loan_id = %s
-                    """,
+                        """,
                         (new_return_date, loan_id),
                     )
                     conn.commit()
-
-                    print("\nLoan updated successfully.\n")
+                    print("\nLoan return date updated successfully.\n")
                 else:
                     print("\nError: The return date cannot be earlier than the loan date.\n")
             else:
-                print("\nNo changes made to the return date.\n")
-        else:
-            print("\nModification cancelled.\n")
+                print("\nModification cancelled.\n")
     else:
-        print("\nLoan not found.\n")
+        print(f"\nLoan not found with ID: {loan_id}\n")
 
     cur.close()
     conn.close()

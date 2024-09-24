@@ -1,16 +1,15 @@
--- Creazione della tabella degli autori
 CREATE TABLE authors (
     author_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
--- Creazione della tabella dei generi
+
 CREATE TABLE genres (
     genre_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL
 );
 
--- Creazione della tabella dei libri
+
 CREATE TABLE books (
     book_id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -20,7 +19,7 @@ CREATE TABLE books (
     is_available BOOLEAN DEFAULT TRUE
 );
 
--- Creazione della tabella dei prestatori (utenti)
+
 CREATE TABLE borrowers (
     borrower_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -28,7 +27,7 @@ CREATE TABLE borrowers (
     phone VARCHAR(20) NOT NULL
 );
 
--- Creazione della tabella dei prestiti
+
 CREATE TABLE loans (
     loan_id SERIAL PRIMARY KEY,
     book_id INT REFERENCES books(book_id) ON DELETE CASCADE,
@@ -38,11 +37,11 @@ CREATE TABLE loans (
     CHECK (return_date IS NULL OR loan_date <= return_date)
 );
 
--- Creare la funzione per aggiornare lo stato di is_available a FALSE
+
 CREATE OR REPLACE FUNCTION update_book_availability()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Aggiornare lo stato di disponibilità del libro associato al prestito
+    -- Update the availability status of the book associated with the loan
     UPDATE books
     SET is_available = FALSE
     WHERE book_id = NEW.book_id;
@@ -51,17 +50,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Creare il trigger che chiama la funzione dopo l'inserimento di un prestito
+-- Create the trigger that calls the function after entering a loan
 CREATE TRIGGER loan_insert_trigger
 AFTER INSERT ON loans
 FOR EACH ROW
 EXECUTE FUNCTION update_book_availability();
 
--- Creare la funzione per aggiornare lo stato di is_available a TRUE quando il libro viene restituito
+-- Create the function to update the state of is_available to TRUE when the book is returned
 CREATE OR REPLACE FUNCTION update_book_availability_on_return()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Aggiornare lo stato di disponibilità del libro associato al prestito
+    -- Update the availability status of the book associated with the loan
     UPDATE books
     SET is_available = TRUE
     WHERE book_id = NEW.book_id;
@@ -70,7 +69,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Creare il trigger che chiama la funzione dopo l'aggiornamento di return_date in loans
+-- Create the trigger that calls the function after updating return_date in loans
 CREATE TRIGGER loan_return_trigger
 AFTER UPDATE OF return_date ON loans
 FOR EACH ROW

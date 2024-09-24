@@ -1,13 +1,7 @@
-import inquirer
-from books import add_book, list_books, modify_book, remove_book, search_books
-from borrowers import (
-    add_borrower,
-    modify_borrower,
-    remove_borrower_by_id,
-    search_borrowers,
-    view_borrowers,
-)
-from loans import borrow_book, modify_loan, return_book, search_loan, view_loans
+import inquirer, re
+from .books import add_book, list_books, modify_book, remove_book, search_books
+from .borrowers import add_borrower, modify_borrower, remove_borrower_by_id, search_borrowers, view_borrowers
+from .loans import borrow_book, modify_loan, return_book, search_loan, view_loans
 
 
 def main_menu():
@@ -80,34 +74,44 @@ def manage_loans():
 
 
 def search_books_interaction():
-    keyword = input(
-        "Enter a keyword to search for books (title, author, genre, or published year): "
-    ).strip()
+    keyword = input("Enter a keyword to search for books (title, author, genre, or published year): ").strip()
 
     if keyword:
         search_books(keyword)
     else:
         print("\nNo keyword entered. Please try again.\n")
 
-# ----------->>>>>>>>>>>>>>>Controllare che gli input siano int<<<<<<<<<<<-----------
+
 def add_book_interaction():
-    title = input("Enter book title: ")
-    author_id = input("Enter author ID: ")
-    genre_id = input("Enter genre ID: ")
-    published_year = input("Enter published year: ")
+    try:
+        title = input("Enter book title: ")
+        author_id = int(input("Enter author ID: "))
+        genre_id = int(input("Enter genre ID: "))
+        published_year = int(input("Enter published year: "))
+    except ValueError:
+        print("\nError: Author ID, Genre ID, and Published Year must be integers.\n")
+        return
 
     add_book(title, author_id, genre_id, published_year)
 
 
 def remove_book_interaction():
-    book_id = input("Enter the book ID to remove: ")
+    try:
+        book_id = int(input("Enter the book ID to remove: "))
+    except ValueError:
+        print("\nError: Book ID must be an integer.\n")
+        return
 
     remove_book(book_id)
 
 
 def modify_book_interaction():
-    book_id = input("Enter the book ID to remove: ")
-
+    try:
+        book_id = int(input("Enter the book ID to modify: "))
+    except ValueError:
+        print("\nError: Book ID must be an integer.\n")
+        return
+    
     modify_book(book_id)
 
 
@@ -125,19 +129,44 @@ def add_borrower_interaction():
     email = input("Enter borrower's email: ")
     phone = input("Enter borrower's phone number: ")
 
+    if not name or not email or not phone:
+        print("\nError: All fields (name, email, phone) are required.\n")
+        return
+
+    if not name.isalpha():
+        print("\nError: Name must contain only letters.\n")
+        return
+
+    email_pattern = r"[^@]+@[^@]+\.[^@]+"
+    if not re.match(email_pattern, email):
+        print("\nError: Invalid email format.\n")
+        return
+
+    if not phone.isdigit():
+        print("\nError: Phone number must contain only digits.\n")
+        return
+
     add_borrower(name, email, phone)
 
 
 def remove_borrower_interaction():
-    id = input("Enter the borrower ID: ")
+    try:
+        borrower_id = int(input("Enter the borrower ID: "))
+    except ValueError:
+        print("\nError: Borrower ID must be an integer.\n")
+        return
 
-    remove_borrower_by_id(id)
+    remove_borrower_by_id(borrower_id)
 
 
 def modify_borrower_interaction():
-    id = input("Enter the borrower ID: ")
+    try:
+        borrower_id = int(input("Enter the borrower ID: "))
+    except ValueError:
+        print("\nError: Borrower ID must be an integer.\n")
+        return
 
-    modify_borrower(id)
+    modify_borrower(borrower_id)
 
 
 def search_loans_interaction():
@@ -150,20 +179,32 @@ def search_loans_interaction():
 
 
 def borrow_book_interaction():
-    book_id = input("Enter the book ID to borrow: ")
-    borrower_id = input("Enter the borrower ID: ")
+    try:
+        book_id = int(input("Enter the book ID to borrow: "))
+        borrower_id = int(input("Enter the borrower ID: "))
+    except ValueError:
+        print("\nError: Both Book ID and Borrower ID must be integers.\n")
+        return
 
     borrow_book(book_id, borrower_id)
 
 
 def return_book_interaction():
-    loan_id = input("Enter the loan ID to return: ")
+    try:
+        loan_id = int(input("Enter the loan ID to return: "))
+    except ValueError:
+        print("\nError: Loan ID must be an integer.\n")
+        return
 
     return_book(loan_id)
 
 
 def modify_loan_interaction():
-    loan_id = input("Enter the loan ID to return: ")
+    try:
+        loan_id = int(input("Enter the loan ID to modify: "))
+    except ValueError:
+        print("\nError: Loan ID must be an integer.\n")
+        return
 
     modify_loan(loan_id)
 

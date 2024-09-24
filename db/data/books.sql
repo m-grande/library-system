@@ -1,4 +1,3 @@
--- Inserimento di 100 libri
 INSERT INTO books (title, author_id, genre_id, published_year) VALUES
 ('The Fellowship of the Ring', 2, 1, 1954),
 ('Harry Potter and the Chamber of Secrets', 1, 1, 1998),

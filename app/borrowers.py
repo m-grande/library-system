@@ -1,6 +1,6 @@
-from db_connection import connect_to_db
-from tabulate import tabulate
 import re
+from .db_connection import connect_to_db
+from tabulate import tabulate
 
 
 def view_borrowers():
@@ -24,6 +24,7 @@ def view_borrowers():
     if borrowers:
         headers = ["Borrower ID", "Name", "Email", "Phone", "Books Borrowed"]
         print(tabulate(borrowers, headers, tablefmt="fancy_grid"))
+        print(f"\nTotal number of borrowers: {len(borrowers)}\n")
     else:
         print("\nNo borrowers found.\n")
 
@@ -33,7 +34,6 @@ def view_borrowers():
 
 def search_borrowers(keyword):
     # Search for borrowers by name, email, or phone using a single keyword and display all details, including books borrowed
-
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -57,11 +57,10 @@ def search_borrowers(keyword):
 
     if borrowers:
         headers = ["Borrower ID", "Name", "Email", "Phone", "Books Borrowed"]
-
         print(tabulate(borrowers, headers, tablefmt="fancy_grid"))
         print(f"\nTotal number of borrowers found: {len(borrowers)}\n")
     else:
-        print("\nNo borrowers found matching the search criteria.\n")
+        print(f"\nNo borrowers found matching the keyword: '{keyword}'\n")
 
     cur.close()
     conn.close()
@@ -69,24 +68,6 @@ def search_borrowers(keyword):
 
 def add_borrower(name, email, phone):
     # Insert a new borrower into the borrowers table, checking for correct input types and duplicates, and display the added borrower
-
-    if not name or not email or not phone:
-        print("\nError: All fields (name, email, phone) are required.\n")
-        return
-
-    if not name.isalpha():
-        print("\nError: Name must contain only letters.\n")
-        return
-
-    email_pattern = r"[^@]+@[^@]+\.[^@]+"
-    if not re.match(email_pattern, email):
-        print("\nError: Invalid email format.\n")
-        return
-
-    if not phone.isdigit():
-        print("\nError: Phone number must contain only digits.\n")
-        return
-
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -94,9 +75,7 @@ def add_borrower(name, email, phone):
     duplicate = cur.fetchone()
 
     if duplicate:
-        print(
-            f"\nError: A borrower with email '{email}' or phone '{phone}' already exists. Please use different data.\n"
-        )
+        print(f"\nError: A borrower with email '{email}' or phone '{phone}' already exists. Please use different data.\n")
     else:
         cur.execute(
             """
@@ -149,9 +128,7 @@ def remove_borrower_by_id(borrower_id):
         books_borrowed = cur.fetchone()[0]
 
         if books_borrowed > 0:
-            print(
-                f"\nBorrower '{borrower[1]}' cannot be removed because has {books_borrowed} book(s) currently borrowed.\n"
-            )
+            print(f"\nBorrower '{borrower[1]}' cannot be removed because they have {books_borrowed} book(s) currently borrowed.\n")
         else:
             headers = ["Borrower ID", "Name", "Email", "Phone"]
             borrower_table = [borrower]
@@ -159,11 +136,7 @@ def remove_borrower_by_id(borrower_id):
             print(tabulate(borrower_table, headers, tablefmt="fancy_grid"))
 
             while True:
-                confirmation = (
-                    input("Are you sure you want to remove this borrower (yes/no)? ")
-                    .strip()
-                    .lower()
-                )
+                confirmation = input("Are you sure you want to remove this borrower (yes/no)? ").strip().lower()
                 if confirmation in ["yes", "no"]:
                     break
                 else:
@@ -183,13 +156,7 @@ def remove_borrower_by_id(borrower_id):
 
 
 def modify_borrower(borrower_id):
-    try:
-        borrower_id = int(borrower_id)
-    except ValueError:
-        print("\nError: Borrower ID must be an integer.\n")
-        return
-
-    # Modify the details of a specific borrower, changing only the values provided by the user
+    # Modify a borrower's details by showing existing 
     conn = connect_to_db()
     cur = conn.cursor()
 
@@ -211,10 +178,25 @@ def modify_borrower(borrower_id):
                 print("\nPlease enter 'yes' or 'no'.")
 
         if confirm == "yes":
-            new_name = input(f"\nEnter new name (current: {borrower[1]}): ").strip() or borrower[1]
-            new_email = input(f"Enter new email (current: {borrower[2]}): ").strip() or borrower[2]
-            new_phone = input(f"Enter new phone (current: {borrower[3]}): ").strip() or borrower[3]
+            print("\nEnter the data you want to change, leave blank for no change.\n")
 
+            new_name = input(f"Enter new name (current: {borrower[1]}): ").strip() or borrower[1]
+            if not new_name.replace(" ", "").isalpha(): 
+                print("\nError: Name must contain only letters and spaces.\n")
+                return
+                        
+            new_email = input(f"Enter new email (current: {borrower[2]}): ").strip() or borrower[2]
+            email_pattern = r"[^@]+@[^@]+\.[^@]+"
+            if not re.match(email_pattern, new_email):
+                print("\nError: Invalid email format.\n")
+                return
+            
+            new_phone = input(f"Enter new phone (current: {borrower[3]}): ").strip() or borrower[3]
+            if not new_phone.isdigit():
+                print("\nError: Phone number must contain only digits.\n")
+                return
+
+        
             cur.execute(
                 """
                 UPDATE borrowers

@@ -1,4 +1,3 @@
--- Inserimento di autori
 INSERT INTO authors (name) VALUES
 ('J.K. Rowling'),
 ('J.R.R. Tolkien'),
