@@ -7,14 +7,14 @@ ENV = os.getenv("ENV", "production")
 # Database configuration for production and test
 DATABASE_CONFIG = {
     "production": {
-        "dbname": "your_username",
-        "user": "michele",
+        "dbname": "library_db",
+        "user": "your_username",
         "host": "localhost",
         "port": "5432",
     },
     "test": {
-        "dbname": "your_username",
-        "user": "michele",
+        "dbname": "library_test_db",
+        "user": "your_username",
         "host": "localhost",
         "port": "5432",
     }
