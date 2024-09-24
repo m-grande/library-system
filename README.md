@@ -6,7 +6,13 @@ The **Library System** is a Python application designed to manage a library's bo
 ## Prerequisites
 Before running the application, make sure you have PostgreSQL and Python installed and running on your system.
 
-## Setup Instructions
+## Installation and Setup
+
+Clone the repository:
+```
+git clone https://github.com/m-grande/library-system.git
+cd library-system
+```
 
 ### Step 1: Open psql
 Open your terminal and launch `psql` to interact with PostgreSQL:
